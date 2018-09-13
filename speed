@@ -1,6 +1,5 @@
-#!/bin/sh
 
-#speed for Centos 7
+#!/bin/sh
 
 DaleyTime=1
 NET_INTERFACE="enp5s0"
@@ -55,19 +54,25 @@ then
         fi
 fi
 
-str=`/sbin/ifconfig $NET_INTERFACE | grep 'RX packets' `
+#str=`/sbin/ifconfig $NET_INTERFACE | grep 'RX packets' `
+str=`cat /proc/net/dev | grep $NET_INTERFACE`
+
+#Inter-|   Receive                                                |  Transmit
+# face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+#enp5s0: 3809       88379   0 8352    0     0          0  41200539 3992      7368    0    0    0     0       0          0
+
 #echo $str
-RX_NOW=`echo $str | awk '{printf $5}' `
+RX_NOW=`echo $str | awk '{printf $2}' `
 
 RX_PRE=$RX_NOW
 
 #echo $RX_NOW && exit 0;
 
-str=`/sbin/ifconfig $NET_INTERFACE | grep 'TX packets' `
-TX_NOW=`echo $str | awk '{printf $5}' `
+#str=`/sbin/ifconfig $NET_INTERFACE | grep 'TX packets' `
+TX_NOW=`echo $str | awk '{printf $10}' `
 TX_PRE=$TX_NOW
 
-#echo $RX_NOW  "  "  $TX_NOW
+#echo "$RX_NOW -- $TX_NOW" && exit 0;
 
 sleep $DaleyTime
 
@@ -76,8 +81,8 @@ sleep $DaleyTime
 
 while :
 do
-        str=`/sbin/ifconfig $NET_INTERFACE | grep 'RX packets' `
-        RX_NOW=`echo $str | awk '{printf $5}' `
+        str=`cat /proc/net/dev | grep $NET_INTERFACE `
+        RX_NOW=`echo $str | awk '{printf $2}' `
                 
         #echo "$RX_NOW $RX_PRE $RX_SPEED"
         RX_SPEED=$(( $RX_NOW - $RX_PRE ))
@@ -86,8 +91,7 @@ do
         #echo echo $RX_SPEED
         RX_SPEED=$(($RX_SPEED/$DaleyTime))
 
-        str=`/sbin/ifconfig $NET_INTERFACE | grep 'TX packets' `
-        TX_NOW=`echo $str | awk '{printf $5}' `
+        TX_NOW=`echo $str | awk '{printf $10}' `
                 #echo  $TX_NOW-$TX_PRE-$DaleyTime
         TX_SPEED=$(( ($TX_NOW-$TX_PRE)/$DaleyTime ))
 
