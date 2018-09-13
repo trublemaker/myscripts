@@ -1,0 +1,100 @@
+#!/bin/sh
+
+#speed for Centos 7
+
+DaleyTime=1
+NET_INTERFACE="enp5s0"
+
+str=0
+RX_NOW=0;RX_PRE=0;
+RX_SPEED=0;RX_COUNT=0;
+RX_SPEED_K=0;RX_COUNT_M=0;
+
+TX_NOW=0;TX_PRE=0;
+TX_SPEED=0;TX_COUNT=0;
+TX_SPEED_K=0;
+TX_COUNT_M=0;
+
+show_dec()
+{
+        #echo 'dec:'$1
+        rdec=$(($1/100))
+        echo $rdec
+}
+
+show_k()
+{
+    intk=0
+    dec=0
+    intk=$(( $1 / 1024 ))
+    dec=$(( ($1 - intk * 1024) * 1000 / 1024))
+    #echo '[' $dec ']'
+
+    if [ "$intk" -ge 100 ]; then
+        echo $intk.`show_dec $dec`
+    elif [ "$intk" -ge 10 ]; then
+        echo ' '$intk.`show_dec $dec`
+    else
+        echo  '. '${intk}.`show_dec $dec`
+    fi
+}
+
+show_m()
+{
+    val=$(( $1/1024))
+    show_k $val
+
+}
+
+if [ "$1" != "" ]
+then
+        NET_INTERFACE=$1
+        if [ "$2" != "" ]
+        then
+                DaleyTime=$2
+        fi
+fi
+
+str=`/sbin/ifconfig $NET_INTERFACE | grep 'RX packets' `
+#echo $str
+RX_NOW=`echo $str | awk '{printf $5}' `
+
+RX_PRE=$RX_NOW
+
+#echo $RX_NOW && exit 0;
+
+str=`/sbin/ifconfig $NET_INTERFACE | grep 'TX packets' `
+TX_NOW=`echo $str | awk '{printf $5}' `
+TX_PRE=$TX_NOW
+
+#echo $RX_NOW  "  "  $TX_NOW
+
+sleep $DaleyTime
+
+#echo $TX_PRE
+#exit 0;
+
+while :
+do
+        str=`/sbin/ifconfig $NET_INTERFACE | grep 'RX packets' `
+        RX_NOW=`echo $str | awk '{printf $5}' `
+                
+        #echo "$RX_NOW $RX_PRE $RX_SPEED"
+        RX_SPEED=$(( $RX_NOW - $RX_PRE ))
+
+
+        #echo echo $RX_SPEED
+        RX_SPEED=$(($RX_SPEED/$DaleyTime))
+
+        str=`/sbin/ifconfig $NET_INTERFACE | grep 'TX packets' `
+        TX_NOW=`echo $str | awk '{printf $5}' `
+                #echo  $TX_NOW-$TX_PRE-$DaleyTime
+        TX_SPEED=$(( ($TX_NOW-$TX_PRE)/$DaleyTime ))
+
+        #echo $RX_SPEED '     ' $TX_SPEED
+        echo $NET_INTERFACE: RXSpeed:`show_k $RX_SPEED`k/s RX Count:`show_m $RX_NOW`M '|' TXSpeed:`show_k $TX_SPEED`k/s TX Count:`show_m $TX_NOW`M ' ' `date +%T`  #.%N
+
+        sleep $DaleyTime
+        RX_PRE=$RX_NOW
+        TX_PRE=$TX_NOW
+done
