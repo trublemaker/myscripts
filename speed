@@ -57,6 +57,12 @@ fi
 #str=`/sbin/ifconfig $NET_INTERFACE | grep 'RX packets' `
 str=`cat /proc/net/dev | grep $NET_INTERFACE`
 
+if [ "$str" = "" ]
+then
+	echo "interface:$NET_INTERFACE is not exist. exit"
+	exit 0
+fi
+
 #Inter-|   Receive                                                |  Transmit
 # face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
 #enp5s0: 3809       88379   0 8352    0     0          0  41200539 3992      7368    0    0    0     0       0          0
